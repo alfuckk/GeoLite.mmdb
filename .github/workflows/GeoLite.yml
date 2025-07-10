@@ -48,7 +48,10 @@ jobs:
         wget -nv -O- "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key=${{ secrets.LICENSE_KEY }}&suffix=tar.gz" | tar zxv
         mkdir -p upload
         cp -v GeoLite*/*.mmdb upload
-        echo "TAG_NAME=$(date +"%Y.%m.%d")" >> $GITHUB_ENV
+        # echo "TAG_NAME=$(date +"%Y.%m.%d")" >> $GITHUB_ENV
+        echo "TAG_NAME=latest" >> $GITHUB_ENV
+        echo "RELEASE_NAME=$(date +"%Y.%m.%d") GeoLite DB Update" >> $GITHUB_ENV
+        echo "RELEASE_BODY=GeoLite database updated on $(date +"%Y.%m.%d")" >> $GITHUB_ENV
 
     - name: Push to "download" branch
       run: |
@@ -58,7 +61,7 @@ jobs:
         git config user.email "${{ github.actor }}@users.noreply.github.com"
         git checkout -b download
         git add .
-        git commit -m "${{ env.TAG_NAME }}"
+        git commit -m "${{ env.RELEASE_NAME }}"
         git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
         git push -f origin download
 
@@ -68,9 +71,12 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ env.TAG_NAME }}
-        body: ${{ env.TAG_NAME }}
+        name: ${{ env.RELEASE_NAME }}
+        body: ${{ env.RELEASE_BODY }}
         files: upload/*.mmdb
-
+        overwrite: true
+        latest: true
+        
     - name: Remove old Releases
       uses: dev-drprasad/delete-older-releases@master
       with:
